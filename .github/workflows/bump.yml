@@ -1,0 +1,45 @@
+name: Bump viralmint cask
+
+# Daily: if tony158/viralmint-releases has a newer release than the cask,
+# set the new version + sha256 and commit. Public repo, so no Actions billing.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare with the latest release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest=$(gh release view -R tony158/viralmint-releases --json tagName -q .tagName)
+          latest="${latest#v}"
+          current=$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/viralmint.rb)
+          echo "current=$current latest=$latest"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          [[ "$latest" != "$current" ]] && echo "bump=true" >> "$GITHUB_OUTPUT" || echo "bump=false" >> "$GITHUB_OUTPUT"
+
+      - name: Update version and sha256
+        if: steps.check.outputs.bump == 'true'
+        run: |
+          set -euo pipefail
+          v="${{ steps.check.outputs.latest }}"
+          curl -fsSL -o mac.dmg "https://github.com/tony158/viralmint-releases/releases/download/v${v}/ViralMint-mac.dmg"
+          sha=$(sha256sum mac.dmg | cut -d' ' -f1)
+          sed -i "s/^  version \".*\"$/  version \"${v}\"/; s/^  sha256 \".*\"$/  sha256 \"${sha}\"/" Casks/viralmint.rb
+          rm mac.dmg
+          git diff --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "viralmint ${v}"
+          git push
