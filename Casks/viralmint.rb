@@ -1,6 +1,6 @@
 cask "viralmint" do
-  version "2026.10.25"
-  sha256 "4019a7cca92c4dcf9ca93bf13062738e4bfefbbe5332bd112aeb4e2a2b56532a"
+  version "2026.11.06"
+  sha256 "101bc1d05f2ebebd9ff4f6121591d72f08dffd047ad83282b060508448c9fb91"
 
   url "https://github.com/tony158/viralmint-releases/releases/download/v#{version}/ViralMint-mac.dmg"
   name "ViralMint"
